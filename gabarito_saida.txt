@@ -1,0 +1,43 @@
+========== CENARIO 1: emprestimos normais ==========
+Processando emprestimo: usuario U1 CPF 11122233344 livro L1
+Emprestimo OK para Ana email ana@email.com vence em 2026-09-13
+Processando emprestimo: usuario U2 CPF 55566677788 livro L2
+Emprestimo OK para Bruno email bruno@email.com vence em 2026-09-20
+Processando emprestimo: usuario U3 CPF 99988877766 livro L3
+Emprestimo OK para Carla email carla@email.com vence em 2026-10-06
+
+========== CENARIO 2: livro esgotado ==========
+Processando emprestimo: usuario U1 CPF 11122233344 livro L2
+Livro indisponivel
+
+========== CENARIO 3: limite de emprestimos (comum = 3) ==========
+Processando emprestimo: usuario U1 CPF 11122233344 livro L4
+Emprestimo OK para Ana email ana@email.com vence em 2026-09-13
+Processando emprestimo: usuario U1 CPF 11122233344 livro L5
+Emprestimo OK para Ana email ana@email.com vence em 2026-09-13
+Processando emprestimo: usuario U1 CPF 11122233344 livro L6
+Limite de emprestimos atingido
+
+========== CENARIO 4: devolucao no prazo (sem multa) ==========
+Processando devolucao: usuario U1 CPF 11122233344 | livro L1
+Devolucao OK no prazo
+
+========== CENARIO 5: devolucao com ATRASO e multa por tipo ==========
+Processando devolucao: usuario U1 CPF 11122233344 | livro L4
+Devolucao com atraso. Multa: 10
+Processando devolucao: usuario U2 CPF 55566677788 | livro L2
+Devolucao com atraso. Multa: 10
+Processando devolucao: usuario U3 CPF 99988877766 | livro L3
+Devolucao com atraso. Multa: 0
+
+========== CENARIO 6: relatorio final ==========
+=== RELATORIO DA BIBLIOTECA ===
+Livro: Clean Code | Disponivel: 2/2
+Livro: O Hobbit | Disponivel: 1/1
+Livro: SICP | Disponivel: 3/3
+Livro: Livro Extra 1 | Disponivel: 5/5
+Livro: Livro Extra 2 | Disponivel: 4/5
+Livro: Livro Extra 3 | Disponivel: 5/5
+Usuario: Ana CPF: 11122233344 | Emprestimos: 1
+Usuario: Bruno CPF: 55566677788 | Emprestimos: 0
+Usuario: Carla CPF: 99988877766 | Emprestimos: 0
