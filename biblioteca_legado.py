@@ -1,5 +1,11 @@
 import datetime
 
+LIMITES_EMPRESTIMO = {"comum": 3, "premium": 5, "funcionario": 10}
+PADRAO_LIMITE_EMPRESTIMO = 1
+PRAZOS_EMPRESTIMO = {"comum": 7, "premium": 14, "funcionario": 30}
+PADRAO_PRAZOS_EMPRESTIMO = 3
+MULTAS_EMPRESTIMOS = {"comum": 2, "premium": 1, "funcionario": 0}
+PADRAO_MULTAS_EMPRESTIMO = 3
 
 class Sistema:
     def __init__(self):
@@ -17,28 +23,16 @@ class Sistema:
     def emprestar_livro(self, usuario_id, livro_id):
         print("Processando emprestimo: usuario " + usuario_id + " CPF " + self.usuarios[usuario_id]["cpf"] + " livro " + livro_id)
         if usuario_id in self.usuarios:
+            tipo = self.usuarios[usuario_id]["tipo"]
+            limite_livros = LIMITES_EMPRESTIMO.get(tipo, PADRAO_LIMITE_EMPRESTIMO)
+            prazo_dias = PRAZOS_EMPRESTIMO.get(tipo, PADRAO_PRAZOS_EMPRESTIMO)
+
             if livro_id in self.livros:
+
                 if self.usuarios[usuario_id]["bloqueado"] == False:
+
                     if self.livros[livro_id]["qtd"] > 0:
-                        # limite de emprestimos por tipo de usuario
-                        if self.usuarios[usuario_id]["tipo"] == "comum":
-                            limite_livros = 3
-                        elif self.usuarios[usuario_id]["tipo"] == "premium":
-                            limite_livros = 5
-                        elif self.usuarios[usuario_id]["tipo"] == "funcionario":
-                            limite_livros = 10
-                        else:
-                            limite_livros = 1
                         if self.usuarios[usuario_id]["emprestimos_ativos"] < limite_livros:
-                            # prazo por tipo
-                            if self.usuarios[usuario_id]["tipo"] == "comum":
-                                prazo_dias = 7
-                            elif self.usuarios[usuario_id]["tipo"] == "premium":
-                                prazo_dias = 14
-                            elif self.usuarios[usuario_id]["tipo"] == "funcionario":
-                                prazo_dias = 30
-                            else:
-                                prazo_dias = 3
                             try:
                                 self.livros[livro_id]["qtd"] = self.livros[livro_id]["qtd"] - 1
                                 self.usuarios[usuario_id]["emprestimos_ativos"] = self.usuarios[usuario_id]["emprestimos_ativos"] + 1
@@ -75,17 +69,12 @@ class Sistema:
                 self.livros[livro_id]["qtd"] = self.livros[livro_id]["qtd"] + 1
                 self.usuarios[usuario_id]["emprestimos_ativos"] = self.usuarios[usuario_id]["emprestimos_ativos"] - 1
                 # calculo de multa
+                tipo = self.usuarios[usuario_id]["tipo"]
                 hoje = datetime.date.today()
+
                 if hoje > emprestimo["vencimento"]:
                     dias_atraso = (hoje - emprestimo["vencimento"]).days
-                    if self.usuarios[usuario_id]["tipo"] == "comum":
-                        multa = dias_atraso * 2
-                    elif self.usuarios[usuario_id]["tipo"] == "premium":
-                        multa = dias_atraso * 1
-                    elif self.usuarios[usuario_id]["tipo"] == "funcionario":
-                        multa = 0
-                    else:
-                        multa = dias_atraso * 3
+                    multa = MULTAS_EMPRESTIMOS.get(tipo, PADRAO_MULTAS_EMPRESTIMO) * dias_atraso
                     print("Devolucao com atraso. Multa: " + str(multa))
                     return multa
                 else:
