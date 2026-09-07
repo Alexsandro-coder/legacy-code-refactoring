@@ -7,6 +7,108 @@ PADRAO_PRAZOS_EMPRESTIMO = 3
 MULTAS_EMPRESTIMOS = {"comum": 2, "premium": 1, "funcionario": 0}
 PADRAO_MULTAS_EMPRESTIMO = 3
 
+class Livro:
+    def __init__(self, livro_id, titulo, autor, categoria, quantidade):
+        self.livro_id = livro_id
+        self.titulo = titulo
+        self.autor = autor
+        self.categoria = categoria
+        self.quantidade = quantidade
+        self.qtd_total = quantidade
+
+    def esta_disponivel(self):
+        return self.quantidade > 0
+
+    def emprestar(self):
+        self.quantidade -= 1
+
+    def devolver(self):
+        self.quantidade += 1
+
+class Usuario:
+    def __init__(self, usuario_id, nome, cpf, email, tipo):
+        self.usuario_id = usuario_id
+        self.nome = nome
+        self.cpf = cpf
+        self.email = email
+        self.tipo = tipo
+        self.emprestimos_ativos = 0
+        self.bloqueado = False
+
+    def limite_emprestimos(self):
+        raise NotImplementedError
+
+    def prazo_dias(self):
+        raise NotImplementedError
+
+    def calcular_multa(self, dias_atraso):
+        raise NotImplementedError
+
+class Comum(Usuario):
+    def limite_emprestimos(self):
+        return 3
+    def prazo_dias(self):
+        return 7
+    def calcular_multa(self, dias_atraso):
+        return 2 * dias_atraso
+
+
+class Premium(Usuario):
+    def limite_emprestimos(self):
+        return 5
+
+    def prazo_dias(self):
+        return 14
+
+    def calcular_multa(self, dias_atraso):
+        return 1 * dias_atraso
+
+class Funcionario(Usuario):
+    def limite_emprestimos(self):
+        return 10
+
+    def prazo_dias(self):
+        return 30
+
+    def calcular_multa(self, dias_atraso):
+        return 0
+
+class Professor(Usuario):
+    def limite_emprestimos(self):
+        return 15
+
+    def prazo_dias(self):
+        return 60
+
+    def calcular_multa(self, dias_atraso):
+        return 0
+
+TIPOS_USUARIOS = {
+    "comum": Comum,
+    "premium": Premium,
+    "funcionario": Funcionario,
+    "professor": Professor,
+}
+
+def criar_usuario(usuario_id, nome, cpf, email, tipo):
+    classe = TIPOS_USUARIOS.get(tipo)
+    if not classe:
+        return None
+    return classe(usuario_id, nome, cpf, email)
+
+class Emprestimo:
+    def __init__(self, usuario_id, livro_id, vencimento):
+        self.usuario_id = usuario_id
+        self.livro_id = livro_id
+        self.vencimento = vencimento
+        self.devolvido = False
+
+    def esta_ativo(self):
+        return not self.devolvido
+
+    def finalizar(self):
+        self.devolvido = True
+
 class Sistema:
     def __init__(self):
         self.livros = {}
