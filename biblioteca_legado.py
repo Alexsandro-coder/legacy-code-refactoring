@@ -62,12 +62,21 @@ class Sistema:
             return False
 
     def devolver_livro(self, usuario_id, livro_id):
+        # Guard Clause para proteger contra KeyError e usuário inexistente
+        if usuario_id not in self.usuarios:
+            print("Usuario nao encontrado")
+            return -1
+
+        # Log executado uma única vez
+        print(f"Processando devolucao: usuario {usuario_id} CPF {self.mascarar_cpf(self.usuarios[usuario_id]['cpf'])} livro {livro_id}")
+
+        # Busca pelo empréstimo ativo
         for emprestimo in self.emprestimos:
             if emprestimo["usuario"] == usuario_id and emprestimo["livro"] == livro_id and emprestimo["devolvido"] == False:
-                print(f"Processando devolucao: usuario {usuario_id} CPF {self.mascarar_cpf(self.usuarios[usuario_id]['cpf'])} livro {livro_id}")
                 emprestimo["devolvido"] = True
-                self.livros[livro_id]["qtd"] = self.livros[livro_id]["qtd"] + 1
-                self.usuarios[usuario_id]["emprestimos_ativos"] = self.usuarios[usuario_id]["emprestimos_ativos"] - 1
+                self.livros[livro_id]["qtd"] += 1
+                self.usuarios[usuario_id]["emprestimos_ativos"] -= 1
+
                 # calculo de multa
                 tipo = self.usuarios[usuario_id]["tipo"]
                 hoje = datetime.date.today()
@@ -80,6 +89,7 @@ class Sistema:
                 else:
                     print("Devolucao OK no prazo")
                     return 0
+        # Caso percorra todos os empréstimos e não ache nenhum ativo
         print("Emprestimo nao encontrado")
         return -1
 
