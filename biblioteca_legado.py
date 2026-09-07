@@ -201,6 +201,27 @@ class Sistema:
         for usuario in self.usuarios.values():
             logger.info(f"Usuario: {usuario.nome} CPF: {self.mascarar_cpf(usuario.cpf)} | Emprestimos: {usuario.emprestimos_ativos}")
 
+    def relatorio_resumido(self):
+        hoje = datetime.date.today()
+
+        total_titulos = len(self.livros)
+        total_exemplares = sum(livro.qtd_total for livro in self.livros.values())
+        total_emprestados = sum(1 for e in self.emprestimos if e.esta_ativo())
+        total_atrasados = sum(1 for e in self.emprestimos if e.esta_ativo() and e.vencimento < hoje)
+
+        logger.info("=== RELATORIO RESUMIDO DA BIBLIOTECA ===")
+        logger.info(f"Total de titulos cadastrados: {total_titulos}")
+        logger.info(f"Total de exemplares no acervo: {total_exemplares}")
+        logger.info(f"Total de exemplares emprestados: {total_emprestados}")
+        logger.info(f"Total de emprestimos em atraso: {total_atrasados}")
+
+        return {
+            "total_titulos": total_titulos,
+            "total_exemplares": total_exemplares,
+            "total_emprestados": total_emprestados,
+            "total_atrasados": total_atrasados,
+        }
+
 
 if __name__ == "__main__":
     s = Sistema()
@@ -259,3 +280,6 @@ if __name__ == "__main__":
     print()
     print("========== CENARIO 6: relatorio final ==========")
     s.relatorio()
+
+    print("========== CENARIO 7: relatorio resumido ==========")
+    s.relatorio_resumido()
