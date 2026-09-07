@@ -20,9 +20,14 @@ class Sistema:
         self.usuarios[usuario_id] = {"nome": nome, "cpf": cpf, "email": email, "tipo": tipo, "emprestimos_ativos": 0,
                       "bloqueado": False}
 
+    def mascarar_cpf(self, cpf):
+        return f"********{cpf[-4:]}"
+
     def emprestar_livro(self, usuario_id, livro_id):
-        print("Processando emprestimo: usuario " + usuario_id + " CPF " + self.usuarios[usuario_id]["cpf"] + " livro " + livro_id)
         if usuario_id in self.usuarios:
+
+            print(f"Processando emprestimo: usuario {usuario_id} CPF {self.mascarar_cpf(self.usuarios[usuario_id]['cpf'])} livro {livro_id}")
+
             tipo = self.usuarios[usuario_id]["tipo"]
             limite_livros = LIMITES_EMPRESTIMO.get(tipo, PADRAO_LIMITE_EMPRESTIMO)
             prazo_dias = PRAZOS_EMPRESTIMO.get(tipo, PADRAO_PRAZOS_EMPRESTIMO)
@@ -62,9 +67,9 @@ class Sistema:
             return False
 
     def devolver_livro(self, usuario_id, livro_id):
-        print("Processando devolucao: usuario " + usuario_id + " CPF " + self.usuarios[usuario_id]["cpf"] + " | " + "livro " + livro_id)
         for emprestimo in self.emprestimos:
             if emprestimo["usuario"] == usuario_id and emprestimo["livro"] == livro_id and emprestimo["devolvido"] == False:
+                print(f"Processando devolucao: usuario {usuario_id} CPF {self.mascarar_cpf(self.usuarios[usuario_id]['cpf'])} livro {livro_id}")
                 emprestimo["devolvido"] = True
                 self.livros[livro_id]["qtd"] = self.livros[livro_id]["qtd"] + 1
                 self.usuarios[usuario_id]["emprestimos_ativos"] = self.usuarios[usuario_id]["emprestimos_ativos"] - 1
@@ -89,7 +94,7 @@ class Sistema:
             print("Livro: " + self.livros[livro_id]["titulo"] + " | Disponivel: " + str(self.livros[livro_id]["qtd"]) + "/" + str(
                 self.livros[livro_id]["qtd_total"]))
         for usuario_id in self.usuarios:
-            print("Usuario: " + self.usuarios[usuario_id]["nome"] + " CPF: " + self.usuarios[usuario_id]["cpf"] + " | Emprestimos: " + str(
+            print("Usuario: " + self.usuarios[usuario_id]["nome"] + " CPF: " + self.mascarar_cpf(self.usuarios[usuario_id]['cpf']) + " | Emprestimos: " + str(
                 self.usuarios[usuario_id]["emprestimos_ativos"]))
 
 
