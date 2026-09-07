@@ -24,46 +24,41 @@ class Sistema:
         return f"********{cpf[-4:]}"
 
     def emprestar_livro(self, usuario_id, livro_id):
-        if usuario_id in self.usuarios:
-
-            print(f"Processando emprestimo: usuario {usuario_id} CPF {self.mascarar_cpf(self.usuarios[usuario_id]['cpf'])} livro {livro_id}")
-
-            tipo = self.usuarios[usuario_id]["tipo"]
-            limite_livros = LIMITES_EMPRESTIMO.get(tipo, PADRAO_LIMITE_EMPRESTIMO)
-            prazo_dias = PRAZOS_EMPRESTIMO.get(tipo, PADRAO_PRAZOS_EMPRESTIMO)
-
-            if livro_id in self.livros:
-
-                if self.usuarios[usuario_id]["bloqueado"] == False:
-
-                    if self.livros[livro_id]["qtd"] > 0:
-                        if self.usuarios[usuario_id]["emprestimos_ativos"] < limite_livros:
-                            try:
-                                self.livros[livro_id]["qtd"] = self.livros[livro_id]["qtd"] - 1
-                                self.usuarios[usuario_id]["emprestimos_ativos"] = self.usuarios[usuario_id]["emprestimos_ativos"] + 1
-                                vencimento = datetime.date.today() + datetime.timedelta(days=prazo_dias)
-                                self.emprestimos.append(
-                                    {"usuario": usuario_id, "livro": livro_id, "vencimento": vencimento, "devolvido": False})
-                                print("Emprestimo OK para " + self.usuarios[usuario_id]["nome"] + " email " + self.usuarios[usuario_id][
-                                    "email"] + " vence em " + str(vencimento))
-                                return True
-                            except:
-                                pass
-                        else:
-                            print("Limite de emprestimos atingido")
-                            return False
-                    else:
-                        print("Livro indisponivel")
-                        return False
-                else:
-                    print("Usuario bloqueado")
-                    return False
-            else:
-
-                print("Livro nao encontrado")
-                return False
-        else:
+        if usuario_id not in self.usuarios:
             print("Usuario nao encontrado")
+            return False
+
+        tipo = self.usuarios[usuario_id]["tipo"]
+        limite_livros = LIMITES_EMPRESTIMO.get(tipo, PADRAO_LIMITE_EMPRESTIMO)
+        prazo_dias = PRAZOS_EMPRESTIMO.get(tipo, PADRAO_PRAZOS_EMPRESTIMO)
+
+        print(f"Processando emprestimo: usuario {usuario_id} CPF {self.mascarar_cpf(self.usuarios[usuario_id]['cpf'])} livro {livro_id}")
+
+        if livro_id not in self.livros:
+            print("Livro nao encontrado")
+            return False
+
+        if self.usuarios[usuario_id]["bloqueado"]:
+            print("Usuario bloqueado")
+            return False
+
+        if self.livros[livro_id]["qtd"] <= 0:
+            print("Livro indisponivel")
+            return False
+
+        if self.usuarios[usuario_id]["emprestimos_ativos"] >= limite_livros:
+            print("Limite de emprestimos atingido")
+            return False
+        try:
+            self.livros[livro_id]["qtd"] = self.livros[livro_id]["qtd"] - 1
+            self.usuarios[usuario_id]["emprestimos_ativos"] = self.usuarios[usuario_id]["emprestimos_ativos"] + 1
+            vencimento = datetime.date.today() + datetime.timedelta(days=prazo_dias)
+            self.emprestimos.append(
+                {"usuario": usuario_id, "livro": livro_id, "vencimento": vencimento, "devolvido": False})
+            print("Emprestimo OK para " + self.usuarios[usuario_id]["nome"] + " email " + self.usuarios[usuario_id][
+                "email"] + " vence em " + str(vencimento))
+            return True
+        except:
             return False
 
     def devolver_livro(self, usuario_id, livro_id):
