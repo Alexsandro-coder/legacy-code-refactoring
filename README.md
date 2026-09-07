@@ -4,6 +4,12 @@ Projeto de refatoração e evolução de um sistema legado de biblioteca acadêm
 
 ---
 
+## 📐 Diagrama de Classes
+
+<p align="center">
+  <img src="assets/diagrama_classes.png" alt="Diagrama de Classes" width="700">
+</p>
+
 ## 📌 Funcionalidades Principais
 
 - **Polimorfismo e Categorias de Usuários (OCP):**
