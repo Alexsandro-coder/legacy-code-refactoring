@@ -1,4 +1,13 @@
 import datetime
+import logging
+
+logger = logging.getLogger("BIBLIOTECA")
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter(
+    "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+))
+logger.addHandler(handler)
 
 class Livro:
     def __init__(self, livro_id, titulo, autor, categoria, quantidade):
@@ -121,29 +130,29 @@ class Sistema:
 
     def emprestar_livro(self, usuario_id, livro_id):
         if usuario_id not in self.usuarios:
-            print("Usuario nao encontrado")
+            logger.warning("Usuario nao encontrado")
             return False
 
         usuario = self.usuarios[usuario_id]
 
         if livro_id not in self.livros:
-            print("Livro nao encontrado")
+            logger.warning("Livro nao encontrado")
             return False
 
         livro = self.livros[livro_id]
 
-        print(f"Processando emprestimo: usuario {usuario_id} CPF {self.mascarar_cpf(usuario.cpf)} livro {livro_id}")
+        logger.info(f"Processando emprestimo: usuario {usuario_id} CPF {self.mascarar_cpf(usuario.cpf)} livro {livro_id}")
 
         if usuario.bloqueado:
-            print("Usuario bloqueado")
+            logger.warning("Usuario bloqueado")
             return False
 
         if usuario.emprestimos_ativos >= usuario.limite_emprestimos():
-            print("Limite de emprestimos atingido")
+            logger.warning("Limite de emprestimos atingido")
             return False
 
         if not livro.esta_disponivel():
-            print("Livro indisponivel")
+            logger.warning("Livro indisponivel")
             return False
 
         livro.emprestar()
@@ -153,16 +162,16 @@ class Sistema:
         novo_emprestimo = Emprestimo(usuario_id, livro_id, vencimento)
         self.emprestimos.append(novo_emprestimo)
 
-        print(f"Emprestimo realizado com sucesso. Vencimento: {vencimento}")
+        logger.info(f"Emprestimo realizado com sucesso. Vencimento: {vencimento}")
         return True
 
     def devolver_livro(self, usuario_id, livro_id):
         if usuario_id not in self.usuarios:
-            print("Usuario nao encontrado")
+            logger.warning("Usuario nao encontrado")
             return -1
 
         usuario = self.usuarios[usuario_id]
-        print(f"Processando devolucao: usuario {usuario_id} CPF {self.mascarar_cpf(usuario.cpf)} livro {livro_id}")
+        logger.info(f"Processando devolucao: usuario {usuario_id} CPF {self.mascarar_cpf(usuario.cpf)} livro {livro_id}")
 
         for emprestimo in self.emprestimos:
             if emprestimo.usuario_id == usuario_id and emprestimo.livro_id == livro_id and emprestimo.esta_ativo():
@@ -176,21 +185,21 @@ class Sistema:
                 if hoje > emprestimo.vencimento:
                     dias_atraso = (hoje - emprestimo.vencimento).days
                     multa = usuario.calcular_multa(dias_atraso)
-                    print(f"Devolucao com atraso. Multa: {multa}")
+                    logger.info(f"Devolucao com atraso. Multa: {multa}")
                     return multa
                 else:
-                    print("Devolucao OK no prazo")
+                    logger.info("Devolucao OK no prazo")
                     return 0
 
-        print("Emprestimo nao encontrado")
+        logger.warning("Emprestimo nao encontrado")
         return -1
 
     def relatorio(self):
-        print("=== RELATORIO DA BIBLIOTECA ===")
+        logger.info("=== RELATORIO DA BIBLIOTECA ===")
         for livro in self.livros.values():
-            print(f"Livro: {livro.titulo} | Disponivel: {livro.quantidade}/{livro.qtd_total}")
+            logger.info(f"Livro: {livro.titulo} | Disponivel: {livro.quantidade}/{livro.qtd_total}")
         for usuario in self.usuarios.values():
-            print(f"Usuario: {usuario.nome} CPF: {self.mascarar_cpf(usuario.cpf)} | Emprestimos: {usuario.emprestimos_ativos}")
+            logger.info(f"Usuario: {usuario.nome} CPF: {self.mascarar_cpf(usuario.cpf)} | Emprestimos: {usuario.emprestimos_ativos}")
 
 
 if __name__ == "__main__":
