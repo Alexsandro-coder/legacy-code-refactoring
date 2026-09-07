@@ -9,6 +9,7 @@ handler.setFormatter(logging.Formatter(
 ))
 logger.addHandler(handler)
 
+
 class Livro:
     def __init__(self, livro_id, titulo, autor, categoria, quantidade):
         self.livro_id = livro_id
@@ -17,6 +18,7 @@ class Livro:
         self.categoria = categoria
         self.quantidade = quantidade
         self.qtd_total = quantidade
+        self.reservas = []  # Fila FIFO de usuarios aguardando o exemplar
 
     def esta_disponivel(self):
         return self.quantidade > 0
@@ -26,6 +28,21 @@ class Livro:
 
     def devolver(self):
         self.quantidade += 1
+
+    def adicionar_reserva(self, usuario_id):
+        if usuario_id in self.reservas:
+            return False
+        self.reservas.append(usuario_id)
+        return True
+
+    def tem_reservas(self):
+        return len(self.reservas) > 0
+
+    def proximo_da_reserva(self):
+        if self.tem_reservas():
+            return self.reservas.pop(0)
+        return None
+
 
 class Usuario:
     def __init__(self, usuario_id, nome, cpf, email):
@@ -45,6 +62,7 @@ class Usuario:
     def calcular_multa(self, dias_atraso):
         raise NotImplementedError
 
+
 class Comum(Usuario):
     def limite_emprestimos(self):
         return 3
@@ -54,6 +72,7 @@ class Comum(Usuario):
 
     def calcular_multa(self, dias_atraso):
         return 2 * dias_atraso
+
 
 class Premium(Usuario):
     def limite_emprestimos(self):
@@ -65,6 +84,7 @@ class Premium(Usuario):
     def calcular_multa(self, dias_atraso):
         return 1 * dias_atraso
 
+
 class Funcionario(Usuario):
     def limite_emprestimos(self):
         return 10
@@ -74,6 +94,7 @@ class Funcionario(Usuario):
 
     def calcular_multa(self, dias_atraso):
         return 0
+
 
 class Professor(Usuario):
     def limite_emprestimos(self):
@@ -85,6 +106,7 @@ class Professor(Usuario):
     def calcular_multa(self, dias_atraso):
         return 0
 
+
 TIPOS_USUARIOS = {
     "comum": Comum,
     "premium": Premium,
@@ -92,11 +114,13 @@ TIPOS_USUARIOS = {
     "professor": Professor,
 }
 
+
 def criar_usuario(usuario_id, nome, cpf, email, tipo):
     classe = TIPOS_USUARIOS.get(tipo)
     if not classe:
         return None
     return classe(usuario_id, nome, cpf, email)
+
 
 class Emprestimo:
     def __init__(self, usuario_id, livro_id, vencimento):
@@ -110,6 +134,7 @@ class Emprestimo:
 
     def finalizar(self):
         self.devolvido = True
+
 
 class Sistema:
     def __init__(self):
@@ -181,6 +206,11 @@ class Sistema:
                 livro.devolver()
                 usuario.emprestimos_ativos -= 1
 
+                # Encaixe da Fila de Reserva na Devolução
+                if livro.tem_reservas():
+                    proximo_usuario = livro.proximo_da_reserva()
+                    logger.info(f"Livro {livro_id} liberado da fila! Proximo usuario contemplado: {proximo_usuario}")
+
                 hoje = datetime.date.today()
                 if hoje > emprestimo.vencimento:
                     dias_atraso = (hoje - emprestimo.vencimento).days
@@ -193,6 +223,30 @@ class Sistema:
 
         logger.warning("Emprestimo nao encontrado")
         return -1
+
+    def reservar_livro(self, usuario_id, livro_id):
+        """Encaixe do metodo de reserva no Sistema"""
+        if usuario_id not in self.usuarios:
+            logger.warning("Usuario nao encontrado")
+            return False
+
+        if livro_id not in self.livros:
+            logger.warning("Livro nao encontrado")
+            return False
+
+        livro = self.livros[livro_id]
+
+        if livro.esta_disponivel():
+            logger.warning(f"Livro {livro_id} ainda possui exemplares disponiveis. Faca o emprestimo direto.")
+            return False
+
+        sucesso = livro.adicionar_reserva(usuario_id)
+        if not sucesso:
+            logger.warning(f"Usuario {usuario_id} ja possui reserva para o livro {livro_id}")
+            return False
+
+        logger.info(f"Reserva realizada com sucesso: usuario {usuario_id} entrou na fila do livro {livro_id}")
+        return True
 
     def relatorio(self):
         logger.info("=== RELATORIO DA BIBLIOTECA ===")
@@ -235,6 +289,7 @@ if __name__ == "__main__":
     s.adicionar_usuario("U1", "Ana", "11122233344", "ana@email.com", "comum")
     s.adicionar_usuario("U2", "Bruno", "55566677788", "bruno@email.com", "premium")
     s.adicionar_usuario("U3", "Carla", "99988877766", "carla@email.com", "funcionario")
+    s.adicionar_usuario("U4", "Daniel", "44455566677", "daniel@email.com", "professor")
 
     print("========== CENARIO 1: emprestimos normais ==========")
     s.emprestar_livro("U1", "L1")
@@ -281,5 +336,20 @@ if __name__ == "__main__":
     print("========== CENARIO 6: relatorio final ==========")
     s.relatorio()
 
+    print()
     print("========== CENARIO 7: relatorio resumido ==========")
     s.relatorio_resumido()
+
+    print()
+    print("========== CENARIO 8: fila de reserva FIFO ==========")
+    # L2 esta disponivel agora (foi devolvido no cenario 5)
+    # 1. Ana pega L2 novamente -> L2 fica esgotado (qtd = 0)
+    s.emprestar_livro("U1", "L2")
+    # 2. Bruno e Daniel tentam pegar L2 esgotado -> falha
+    s.emprestar_livro("U2", "L2")
+    s.emprestar_livro("U4", "L2")
+    # 3. Ambos entram na fila de reserva (ordem: U2 primeiro, U4 depois)
+    s.reservar_livro("U2", "L2")
+    s.reservar_livro("U4", "L2")
+    # 4. Ana devolve L2 -> o log deve avisar que o proximo contemplado eh U2!
+    s.devolver_livro("U1", "L2")
